@@ -1,0 +1,588 @@
+---
+title: 'Introducción a R con datos del CIS'
+author: ''
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align='center')
+```
+
+**R** es un lenguaje de programación orientado a la estadística lanzado por Robert Gentleman y Ross Ihaka en 1994. La principal ventaja que tiene frente a otros paquetes estadísticos como SPSS, SAS o STATA es que es **gratuito y de código abierto**. También está integrado con múltiples plataformas y se puede trabajar con él en dispositivos con sistemas operativos distintos. R se orienta a la **reproducibilidad** al trabajar con scripts de código (salvo que usemos **Rcommander**, una buena opción para aprender con una interfaz de menús). Esto permite que un script se pueda ejecutar por varios usuarios llegando al mismo resultado. Pero la gran ventaja de R está en su **comunidad**, que desarrolla paquetes, ofrece ayuda para cualquier problema y organiza eventos para difundir las posibilidades de este lenguaje de programación.
+
+Además de estas ventajas generales, **R para las ciencias sociales** permite automatizar procesos que pueden resultar laboriosos de realizarse manualmente, organizar y tener un registro replicable de todos los procedimientos realizados durante una investigación y acceder a múltiples paquetes. Estos paquetes van desde el análisis estadístico tradicional hasta otras aplicaciones más innovadoras como la descarga de tweets o el *web-scrapping*.
+
+Cuando buscamos cursos para aprender R, a menudo nos topamos con que los ejemplos siempre utilizan datasets de coches o vuelos. El objetivo de esta serie de posts es acercar R a profesionales y estudiantes del ámbito de las ciencias sociales. Por ello, utilizaremos datos provenientes de la encuesta postelectoral de las generales de 2019 o la serie temporal de ubicación ideológica del Partido Popular desde que el Centro de Investigaciones Sociológicas lo empezase a preguntar en enero de 1989.
+
+Este proyecto no deja de ser una breve introducción, por lo que no aprenderás todas las funcionalidades de R. Es, más bien, una pequeña guía para orientar el aprendizaje, que deberá ser completada con otros cursos, búsquedas en Google y [Stackoverflow](https://stackoverflow.com/questions/tagged/r) y con la propia práctica. Recomiendo enormemente que descargues un conjunto de datos de tu interés y vayas replicando lo que voy haciendo aquí.
+
+Si partes de cero, Internet está lleno de recursos para aprender lo básico. Algunas de mis recomendaciones son:
+
+* El canal de Youtube de [R para muy principiantes](https://www.youtube.com/channel/UC2SSKZqKbnrVLrDEPi6ax0A).
+* El curso de [Estadística para las ciencias sociales con R](https://sites.google.com/a/pucp.pe/data_est/contenidos-del-curso/introduccion) de David Sulmont.
+* El [manual](https://cran.r-project.org/doc/contrib/rdebuts_es.pdf) de Emmanuel Paradis.
+* El paquete [swirl](https://swirlstats.com/).
+* Cualquier curso introductorio que encuentres con una búsqueda en Google, aunque recuerda que para aprender lo básico de R no es necesario gastar mucho dinero.
+
+También recomiendo el libro de Jesús Bouso [El paquete estadístico R](https://libreria.cis.es/libros/el-paquete-estadistico-r/9788474767773/), de la colección Cuadernos Metodológicos del CIS.
+
+No obstante, si no tienes el tiempo necesario para hacer un curso de introducción (aunque es casi imprescindible), el mínimo para seguir esta serie se resume en que:
+
+* El *software* más común para programar con R es RStudio. Este programa contiene, entre otros y en una interfaz visual amigable, la consola de R y una ventana para escribir *scripts* (que son una especie de documentos donde se escribe el código que después se ejecutará).
+* El símbolo <- crea un objeto y le asigna un valor, que puede ir desde un simple número hasta todo un conjunto de datos (el típico fichero de microdatos en .sav del CIS) o una sucesión de comandos que crea un gráfico.
+* Los comandos ejecutan acciones determinadas por lo que se escribe entre los paréntesis que la acompañan.
+* Si escribes código y no pones <-, no lo asignarás a un objeto y no se guardará dentro del entorno de cara a las siguientes operaciones.
+* El símbolo **%>%** se llama **pipe**, proviene del paquete **magrittR** y sirve para concatenar código de cara a facilitar su programación y lectura.
+
+Estos mínimos pueden sonar abstractos si nunca has programado y extremadamente fáciles si ya tienes una base de R. Si estás en el primer caso, conforme la serie se vaya desarrollando podrás verlo de forma más práctica. Si estás en el segundo, espero tratar algún contenido de tu interés que resulte útil. En el próximo post comenzaremos con algo de visualización con el famoso paquete **ggplot2**.
+
+En este post vamos a comenzar a explorar las posibilidades que ofrece R. En el proceso de análisis de datos, la visualización es uno de los últimos pasos a llevar a cabo. Sin embargo, aquí vamos a comenzar a visualizar inmediatamente después de la importación de los microdatos. Esta decisión se debe a que un principiante verá de forma más clara los efectos de los cambios de código sobre un gráfico. 
+
+# Importación de microdatos
+
+En primer lugar importamos los microdatos de la encuesta postelectoral de las elecciones generales de 2019 (estudio número 3248), descargados en formato .sav del [banco de datos del CIS](http://www.cis.es/cis/opencms/ES/2_bancodatos/catalogoencuestas.html). Utilizaremos la librería **haven**, que ya viene integrada en RStudio.
+
+```{r importacion}
+library(haven)
+dataset <- read_sav("C:/Users/jlrsd/OneDrive/Trabajando con datos del CIS en R/data/3248.sav")
+```
+
+Haven importa los valores con sus códigos (1,2,3,4) y etiquetas. Para tener otro dataset que muestre solo las etiquetas (Mucho, bastante, poco, nada) tenemos que aplicarle la función as_factor.
+
+```{r importacion etiquetas}
+datasetconetiquetas <- as_factor(dataset)
+```
+
+Para importar únicamente los códigos utilizaríamos **val_labels** del paquete **labelled**.
+
+```{r importacion codigos, warning = FALSE}
+#install.packages("labelled")
+library(labelled)
+val_labels(dataset) <- NULL
+```
+
+# Tidyverse y visualización de datos con ggplot2
+
+Una vez importados los datos vamos a conocer las posibilidades de visualización de R a través de **ggplot2**. En muchos cursos de R se comienza por la visualización sin respetar el orden lineal del proceso de investigación: extracción de información, procesamiento, análisis y visualización. El motivo de empezar visualizando es que el usuario principiante puede ver de forma más tangible el resultado de lo que está modificando en su código.
+
+Este paquete forma parte del [**Tidyverse**](https://www.tidyverse.org/packages/), una colección de paquetes que amplían las funcionalidades de R para ciencia de datos. Su creador es [Hadley Wickham](http://hadley.nz/), todo un referente en la comunidad de R.
+
+Los paquetes más importantes de Tidyverse son:
+
+* **ggplot2** para visualización.
+* **dplyr** para manipulación de datos.
+* **tidyr** para manipulación de dataframes.
+* **readr** para importar datos.
+* **purrr** para programación con funciones
+* **tibble** para trabajar con estructuras de datos alternativas a los dataframes.
+* **stringr** para trabajar con variables de tipo cadena.
+* **forcats** para trabajar con variables de tipo factor.
+
+En primer lugar instalamos y activamos el paquete que aglutina la colección Tidyverse. También iniciamos el paquete scales, que se utiliza para personalizar las escalas de los gráficos. Si es la primera vez que vas a utilizar estos paquetes tendrías que quitar la almohadilla (#) antes de *install.packages*. La almohadilla se utiliza para que esa parte de código no se ejecute, por lo que es útil cuando queremos hacer comentarios o marcar un proceso ya realizado, como en este caso.
+
+```{r instalacion tidyverse, message = FALSE, warning=FALSE}
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("scales")
+library(scales)
+```
+
+En primero lugar, vamos a realizar un gráfico de barras muy básico para ver el grado de interés por la política (P1) de la muestra.
+
+```{r grafico barras, message = FALSE, out.width = "600px"}
+ggplot(data = dataset) +
+  geom_bar(mapping = aes(x = P1))
+```
+
+De manera similar a Photoshop, ggplot2 trabaja por capas. Por tanto, al gráfico anterior le podemos añadir cuantas capas queramos de cara a mejorar la visualización de aquello que queremos comunicar. 
+
+Incluyendo algunas líneas al gráfico anterior lo podemos presentar mucho más mejorado 
+
+```{r grafico barras 2, message = FALSE, warning = FALSE, out.width = "600px"}
+ggplot(data = dataset, aes(x = P1)) +
+  geom_bar(aes(y = ..prop.., group = 1), fill = "lightblue", color = "darkblue") +
+  labs(title = "Grado de interés por la política", caption = "Elaboración propia. Fuente: Encuesta postelectoral del CIS (2019)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, hjust = 0.5), axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  scale_x_continuous(limits = c(0, 5), breaks = c(1,2,3,4), labels = c("Mucho", "Bastante", "Poco", "Nada")) +
+  scale_y_continuous(labels = percent_format()) +
+  geom_text(aes(label = percent(..prop..), y= ..prop..), stat= "count", vjust = -.5)
+```
+
+Al trabajar por capas, por ejemplo podemos dejar al fondo el gráfico de barras y poner uno de línea encima. Las posibilidades con ggplot2 son casi infinitas y no hay más que informarse, practicar y empaparse de lo que los mejores comparten, como este [*cookbook* del equipo de datos de la BBC](https://bbc.github.io/rcookbook/).
+
+```{r grafico barras 3, message = FALSE, warning = FALSE, out.width = "600px"}
+ggplot(data = dataset, aes(x = P1)) +
+  geom_bar(aes(y = ..prop.., group = 1), fill = "lightblue", alpha = 0.4) +
+  labs(title = "Grado de interés por la política", caption = "Elaboración propia. Fuente: Encuesta postelectoral del CIS (2019)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, hjust = 0.5), axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  scale_x_continuous(limits = c(0, 5), breaks = c(1,2,3,4), labels = c("Mucho", "Bastante", "Poco", "Nada")) +
+  scale_y_continuous(labels = percent_format()) +
+  geom_text(aes(label = percent(..prop..), y= ..prop..), stat= "count", vjust = -.5)
+```
+
+# Algunos ejemplos de lo que se puede llegar a hacer
+
+Con un poco de práctica y habilidad se pueden crear gráficos de calidad como este de Kiko Llaneras.
+
+```{r ejemplos graficos R 1, echo = FALSE, out.width = "600px"}
+knitr::include_graphics('C:/Users/jlrsd/OneDrive/Trabajando con datos del CIS en R/resources/kll4.jpg')
+```
+
+O este boxplot de [The R Graph Gallery](https://www.r-graph-gallery.com), una web útil para obtener plantillas de gráficos y reutilizarlas para nuestras propias visualizaciones.
+
+```{r ejemplos graficos R 2, echo = FALSE, out.width = "600px"}
+knitr::include_graphics('C:/Users/jlrsd/OneDrive/Trabajando con datos del CIS en R/resources/boxplot.png')
+```
+
+# Facets
+
+Otra funcionalidad interesante de ggplot2 son los **facets**, que permiten presentar un mismo gráfico varias veces en función de otra variable. En este caso, mostramos el interés en la política para capitales de comunidad autónoma, capitales de provincia y otros municipios.
+
+```{r grafico con facets, message = FALSE, warning = FALSE}
+labels <- c(
+                    `1` = "Capital de CA",
+                    `2` = "Capital de provincia",
+                    `3` = "Otros municipios"
+                    )
+
+ggplot(data = dataset, aes(x = P1)) +
+  geom_bar(aes(y = ..prop..), fill = "lightblue", alpha = 0.8) +
+  facet_wrap(~CAPITAL, labeller = as_labeller(labels)) +
+  labs(title = "Grado de interés por la política", caption = "Elaboración propia. Fuente: Encuesta postelectoral del CIS (2019)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, hjust = 0.5), axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle = 90)) +
+  scale_x_continuous(limits = c(0, 5), breaks = c(1,2,3,4), labels = c("Mucho", "Bastante", "Poco", "Nada")) +
+  scale_y_continuous(labels = percent_format()) +
+  geom_text(aes(label = percent(..prop..), y= ..prop..), stat= "count", vjust = -.5)
+```
+
+# Series temporales
+
+La postelectoral del CIS proporciona datos en un momento temporal dado. Sin embargo, las series temporales de esta institución permiten analizar una misma variable longitudinalmente. Para mostrar otros tipos de gráficos con ggplot2 vamos a cargar la serie temporal de percepción de la ubicación ideológica del Partido Popular.
+
+```{r importacion serie temporal}
+library(readxl)
+Ubicacion_PP <- read_excel("C:/Users/jlrsd/OneDrive/Trabajando con datos del CIS en R/data/UbicacionPP.xlsx")
+```
+
+Para simplificar el gráfico, primero calculamos nuevas variables para agregar los posicionamientos de 1 a 4 como izquierda, 5 y 6 como centro y de 7 a 10 como derecha. Después, redondeamos a un decimal. También se define la variable Año como fecha.
+
+```{r ubicacion, out.width = "600px"}
+Ubicacion_PP <- Ubicacion_PP %>% 
+  mutate(izquierda = (a + b)/(a+b+c+d+e)*100) %>% 
+  mutate(centro = c/(a+b+c+d+e)*100) %>% 
+  mutate(derecha = (d + e)/(a+b+c+d+e)*100)
+
+Ubicacion_PP$izquierda <- round(Ubicacion_PP$izquierda, digits = 1)
+Ubicacion_PP$centro <- round(Ubicacion_PP$centro, digits = 1)
+Ubicacion_PP$derecha <- round(Ubicacion_PP$derecha, digits = 1)
+
+Ubicacion_PP$Año <- as.Date(Ubicacion_PP$Año)
+```
+
+Con ggplot se visualiza la serie temporal con la geometría **geom_line**.
+
+```{r grafico linea, out.width = "600px"}
+Ubicacion_PP %>% 
+  ggplot() +
+    geom_line(mapping = aes(x = Año, y = izquierda, color = "Izquierda"), size = 1.3) +
+    geom_line(mapping = aes(x = Año, y = centro, color = "Centro"), size = 1.3) +
+    geom_line(mapping = aes(x = Año, y = derecha, color = "Derecha"), size = 1.3) +
+    scale_colour_manual("", 
+                      breaks = c("Izquierda", "Centro", "Derecha"),
+                      values = c("orange", "blue", "red")) +
+    scale_x_date("", breaks = "4 year", date_labels = "%b %y") +
+    scale_y_continuous("") +
+    ggtitle("Ubicación ideológica del Partido Popular")+
+    theme_minimal()
+```
+
+Gracias a la gramática por capas de ggplot se pueden superponer gráficos de puntos sobre un gráfico de línea. Este ejemplo es algo trivial, pero se abren posibilidades muy interesantes.
+
+```{r grafico linea y puntos, out.width = "600px"}
+Ubicacion_PP %>% 
+  ggplot() +
+    geom_line(mapping = aes(x = Año, y = izquierda, color = "Izquierda"), size = 1.3) +
+    geom_line(mapping = aes(x = Año, y = centro, color = "Centro"), size = 1.3) +
+    geom_line(mapping = aes(x = Año, y = derecha, color = "Derecha"), size = 1.3) +
+    scale_colour_manual("", 
+                      breaks = c("Izquierda", "Centro", "Derecha"),
+                      values = c("orange", "blue", "red")) +
+    scale_x_date("", breaks = "4 year", date_labels = "%b %y") +
+    scale_y_continuous("") +
+    ggtitle("Ubicación ideológica del Partido Popular")+
+    theme_minimal() +
+    geom_point(mapping = aes(x= Año, y = izquierda)) +
+    geom_point(mapping = aes(x= Año, y = centro)) +
+    geom_point(mapping = aes(x= Año, y = derecha))
+```
+
+Existe otra geometría, denominada **geom_smooth**, que permite suavizar la serie y añadir un intervalo de confianza para mostrar incertidumbre.
+
+```{r grafico smooth, message = FALSE, out.width = "600px"}
+Ubicacion_PP %>% 
+  ggplot() +
+    geom_smooth(mapping = aes(x = Año, y = izquierda, color = "Izquierda"), size = 1.3, span = 0.2) +
+    geom_smooth(mapping = aes(x = Año, y = centro, color = "Centro"), size = 1.3, span = 0.2) +
+    geom_smooth(mapping = aes(x = Año, y = derecha, color = "Derecha"), size = 1.3, span = 0.2) +
+    scale_colour_manual("", 
+                      breaks = c("Izquierda", "Centro", "Derecha"),
+                      values = c("orange", "blue", "red")) +
+    scale_x_date("", breaks = "4 year", date_labels = "%b %y") +
+    scale_y_continuous("") +
+    ggtitle("Ubicación ideológica del Partido Popular")+
+    theme_minimal()
+```
+*Ggplot2* es una herramienta muy interesante, pero por si sola no es suficiente para cubrir todas las necesidades del analista de datos. Tidyverse tiene paquetes útiles para otras fases del proceso de análisis de datos y te recomiendo encarecidamente que investigues sobre ellos. En esta serie, con introducir *ggplot2* y *dplyr* será suficiente. En el próximo post mostraremos cómo realizar un análisis exploratorio de los datos mediante métricas cuantitativas.
+
+En este post vamos a realizar un análisis exploratorio de los datos (tablas univariadas y bivariadas) y algunas operaciones estadísticas básicas (intervalos de confianza y prueba t de Student). Lo que voy a desarrollar no es más que una breve introducción, ya que las posibilidades de R a nivel estadístico son muy potentes.
+
+# Tablas univariadas
+
+En primer lugar vamos a obtener una tabla de frecuencias sencilla de la P1 (grado de interés por la política) con el comando **table**.
+
+```{r frecuencias absolutas}
+table(datasetconetiquetas$P1)
+```
+
+Ahora con frecuencias relativas, añadiendo primero **prop.table**.
+
+```{r frecuencias relativas}
+prop.table(table(datasetconetiquetas$P1))
+```
+
+Si queremos expresar la tabla de frecuencias relativas en porcentajes hay que multiplicar lo anterior por 100.
+
+```{r frecuencias relativas porcentaje}
+prop.table(table(datasetconetiquetas$P1))*100
+```
+
+Para redondear la tabla anterior, primero habría que guardarla en un objeto al que llamamos *tabla* y después aplicar la función **round**.
+
+```{r frecuencias relativas redondeadas}
+tabla <- prop.table(table(datasetconetiquetas$P1))*100
+round(tabla, digits = 1)
+```
+
+Ahora vamos a recodificar entre interesados y no interesados en política, filtrando (con la función filter de dplyr, que veremos después) los no sabe y no contesta. Después recodificamos 1 y 2 como interesados y 3 y 4 como no interesados en política. En la tabla se ve la proporción de cada uno de estos grupos sobre el total de la muestra.
+
+```{r filtros}
+subset <- datasetconetiquetas %>% 
+              filter(P1 != "N.C.", P2 != "N.S.", P2 != "N.C.")
+```
+
+```{r recodificacion, warning = FALSE, message = FALSE}
+library(car)
+
+subset$P1 <- as.numeric(subset$P1)
+subset$P1.r <- recode(subset$P1, "1=1; 2=1; 3=2; 4=2")
+
+subset$P1.r <- as.factor(subset$P1.r)
+levels(subset$P1.r) <- c("Interesados", "No interesados")
+
+prop.table(table(subset$P1.r))
+```
+También se pueden calcular estadísticos como la media o la mediana con la función **summarise**, de Tidyverse, que veremos en mayor profundidad en el próximo post. Para no tener en cuenta los casos perdidos, antes de calcular la media y la mediana filtramos para quedarnos solo con los casos donde la P1 sea menor que 9.
+
+```{r media y mediana}
+dataset %>%
+  filter(P1 < 9) %>%
+  summarise(media = mean(P1), mediana = median(P1))
+```
+
+# Tablas bivariadas
+
+Ya hemos visto cómo explorar una sola variable. Ahora mostraré cómo hacer cruces entre dos variables. Para hacer una tabla de contingencia con frecuencias absolutas de la P1 (interés por la política) y P2 (interés por la campaña electoral) volvemos a usar **table**, aunque esta vez incluyendo el par de variables en cuestión.
+
+```{r frecuencias absolutas cruce}
+table(datasetconetiquetas$P1, datasetconetiquetas$P2) 
+```
+
+Para mostrar ahora las frecuencias relativas sin los que no contestan reaprovecharemos el dataset *subset* creado en el apartado anterior. Al igual que para las frecuencias relativas de una variable, el comando a utilizar es **prop.table** y **round** si queremos redondear, especificando el número de dígitos a los que hacerlo.
+
+```{r frecuencias relativas sin NC cruce}
+round(prop.table(table(subset$P1, subset$P2)) * 100, digits = 2)
+```
+
+Con la librería descr y su comando **crosstab** podemos hacer tablas de contingencia similares a las de SPSS de forma muy sencilla. En este caso calcularemos el % sobre el total. Cambiando el parámetro prop.t por prop.r y prop.c se mostraría la proporción por fila y por columna, respectivamente. Con el paquete **xtable** se le pueden dar diferentes formatos a las tablas para mejorar la visualización.
+
+```{r tabla de contingencia, warning = FALSE}
+#install.packages("descr")
+library(descr)
+
+levels(subset$P2) <- c("Mucho", "Bastante", "Poco", "Ninguno", "N.S.", "N.C.")
+crosstab(subset$P1, subset$P2, prop.t = TRUE, plot = FALSE)
+```
+
+# Intervalos de confianza y prueba t de Student
+
+Las técnicas de investigación social cuantitativas tienen problemas a la hora de acceder a datos de la totalidad de la población. El *big data* está paliando parcialmente esta situación, porque las compañías pueden acceder a los datos que generan sus dispositivos conectados al Internet de las cosas. Por ejemplo, Polar probablemente tendrá una gran base con datos de relojes deportivos con GPS. Sin embargo, la encuesta no tiene esta facilidad para acceder al total de la población. Es aquí donde entra en juego el muestreo, que en términos ideales consiste en acceder a un conjunto de entrevistados representativo del total de la población. De los estadísticos de muestras representativas se pueden inferir parámetros poblacionales.
+
+Una operación estadística de inferencia básica es la estimación de intervalos de confianza dadas una media, una desviación típica y un nivel de confianza. El parámetro poblacional es desconocido, pero con el intervalo de confianza nos aproximamos probabilísticamente a su valor asumiendo que la muestra es representativa. Con el paquete **rmisc** podemos calcular un intervalo de confianza con un nivel de confianza del 95% a partir de la autoubicación ideológica de la muestra, por ejemplo. Antes de calcular el intervalo hemos filtrado para quedarnos solo con los casos que no son perdidos.
+
+```{r intervalo confianza, warning=FALSE, message=FALSE}
+#install.packages("Rmisc")
+library(Rmisc)
+
+subset <- dataset %>%
+            filter(dataset$P32 < 97)
+
+CI(subset$P32, ci = 0.95)
+```
+Asumiendo que la muestra es representativa de la población, la autoubicación ideológica de la población estará entre 4,46 y 4,57 con un 95% de probabilidad.
+
+Otra de las bases de la estadística inferencial es el contraste de hipótesis, que se puede hacer mediante el test t de Student. Si supiésemos que el parámetro poblacional de la autoubicación ideológica es 5, podríamos hacer la prueba y ver si existen diferencias estadísticamente significativas con el valor obtenido en la muestra.
+
+```{r t test}
+t.test(subset$P32, mu = 5)
+```
+En este caso observamos que el p valor es muy bajo, por lo que existen diferencias estadísticamente significativas entre el valor obtenido en la muestra y el hipotético parámetro poblacional de 5 con un nivel de confianza del 95%. Por tanto, la muestra, bajo el supuesto de que es representativa, no estaría tomada de una población donde la media de autoubicación ideológica fuese de 5 con una alta probabilidad.
+
+En este post he sintetizado lo más básico que se puede hacer a nivel estadístico con R, pero cabe señalar una vez más que sus posibilidades son mucho mayores. Con una búsqueda en *Google* o en *Stackoverflow* se puede obtener mucha información acerca de cómo aplicar técnicas más sofisticadas como las de clasificación o las de predicción. También hay webs recomendables para ello, como [r-statistics.co](https://r-statistics.co/) o el [Github de Joaquín Amat](https://github.com/JoaquinAmatRodrigo/Estadistica-con-R).
+
+**Dplyr** es un paquete del Tidyverse orientado a la manipulación de conjuntos de datos. Las transformaciones que se realizan con este paquete se pueden hacer también con R base, pero la gramática de Dplyr es más eficiente y fácil de recordar. Sus funciones con unos **verbos clave**:
+
+* **filter** para filtrar observaciones.
+* **arrange** para ordenar observaciones.
+* **select** para seleccionar variables.
+* **mutate** para crear variables nuevas.
+* **summarise** para resumir valores de variables.
+* **group_by** para agrupar por una variable y después operar, visualizar, etc.
+
+# Filter
+
+**Filter** ya lo hemos utilizado previamente. Como hemos comentado, sirve para filtrar casos u observaciones. En el caso de la encuesta del CIS, cada caso es un entrevistado. Por ejemplo, si quisiéramos quedarnos solo con los que valoran a Pedro Sánchez con un 5 o más sobre 10.
+
+```{r filter1}
+dataset %>% 
+  filter(P3406 >=5)
+```
+
+De esta forma hemos creado un nuevo dataset llamado sanchezaprobado, que contiene solo a los encuestados que en la P3406 han dado un 5 o más. En este **chunk**  se utiliza el símbolo **%>%**. Se trata de una **pipe**, que es un operador que sirve para concatenar operaciones. En el código se observa que hemos puesto el dataset en la primera línea de código, de modo que a partir de ahí R interpreta que todas las operaciones siguientes se hacen sobre ese dataset.
+
+Los **operadores lógicos** de filter son:
+
+* Mayor que (>).
+* Menor que (<).
+* Mayor o igual que (>=).
+* Menor o igual que (<=).
+* Igual que (==).
+* Distinto de (!=).
+
+Con el uso de | (o) o & (y) se pueden concatenar varias condiciones en la función **filter**, como se muestra en el siguiente fragmento de código.
+
+```{r filter2}
+dataset %>% 
+  filter(P3406 >=5 | P3404 >= 5)
+```
+
+# Arrange
+
+Para ordenar filas utilizaremos el comando **arrange**. En este caso queremos ordenar de menor a mayor por satisfacción con el funcionamiento de la democracia.
+
+```{r arrange}
+dataset %>%
+  select(ESTU, CUES, P3) %>%
+  arrange(P3)
+```
+
+Por el contrario, para ordenar de mayor a menor hay que usar el comando **desc()**.
+
+```{r arrange desc}
+dataset %>%
+  select(ESTU, CUES, P3) %>%
+  arrange(desc(P3))
+```
+
+Si ordenamos de forma descendente, primero nos saldrán los 98 de "N.S.". Gracias a las pipes podemos combinar la función *filter* con *arrange* y eliminar los no sabe para después ordenar. Además tendremos un código más limpio y legible.
+
+```{r arrange con filter}
+dataset %>%
+  select(ESTU, CUES, P3) %>%
+  filter(P3 != 98, P3 != 99) %>% 
+  arrange(desc(P3))
+```
+
+También se pueden encadenar varios *arranges*. En el siguiente caso ordenaremos primero de menor a mayor la P3 y después de mayor a menor por P4. En caso de que la P3 sea igual, las filas se ordenarán de mayor a menor por la P4.
+
+```{r arrange doble}
+dataset %>%
+  select(ESTU, CUES, P3, P4) %>%
+  filter(P3 != 98, P3 != 99, P4 != 8, P4 != 9) %>% 
+  arrange(P3, desc(P4))
+```
+
+# Select
+
+Hasta ahora hemos trabajado con las 309 variables del dataset completo y tarda más en computar, por lo que la programación es menos eficiente. La función **select** nos va a permitir quedarnos solo con las variables de nuestro interés.
+
+Si solo quisiéramos obtener la variable CUES, que es el identificador del cuestionario, tendríamos que ejecutar lo siguiente:
+
+```{r select}
+dataset %>% 
+  select(CUES) %>%
+  head()
+```
+
+Si queremos quedarnos solo con las variables relativas al desarrollo de la entrevista, que vienen ordenadas al final, no es necesario escribirlas todas en el paréntesis del comando select. Bastaría con poner la primera y la última.
+
+```{r select rango}
+dataset %>% 
+  select(P6001:P6102) %>%
+  head()
+```
+
+Y para elegir todas las variables menos las relativas al desarrollo de la entrevista bastaría con poner un símbolo de -.
+
+```{r select excluyendo}
+dataset %>% 
+  select(-(P6001:P6102)) %>%
+  head()
+```
+
+Otra posibilidad es quedarnos solo con las variables que empiezan por P. Para seleccionar las que acaban bajo el criterio que establezcamos el comando a usar sería **ends_with**. A los comandos ya mencionados se les suman otros como **contains**, **matches** o **num_range**.
+
+```{r select starts with}
+dataset %>% 
+  select(starts_with("P")) %>%
+  head()
+```
+
+Una función muy similar a *select* es **rename**. Como su propio nombre indica, permite cambiar el nombre de las variables para hacerlas más manejables.
+
+```{r rename, results="hide"}
+dataset %>%
+  dplyr::rename(interespolitica = P1, interescampaña = P2, satisfacciondemocracia = P3)
+```
+
+Los dos últimos comandos se pueden combinar, de modo que se puede seleccionar y renombrar a la vez.
+
+```{r select y rename}
+dataset %>% 
+  select(interespolitica = P1, interescampaña = P2, satisfacciondemocracia = P3)
+```
+
+# Mutate
+
+El comando **mutate** sirve para calcular nuevas variables. Este comando resultaría útil si quisiéramos, por ejemplo, calcular la distancia percibida entre PP y PSOE por los encuestados. Antes de operar con *mutate* hemos enviado a perdidos todos los 98 y 99 de las variables implicadas en los próximos ejemplos. También incorporamos *select* con esas variables implicadas para agilizar la computación y facilitar la visualización de los resultados de usar *mutate*.
+
+```{r mutate}
+dataset$P3301[dataset$P3301 == 98] <- NA
+dataset$P3301[dataset$P3301 == 99] <- NA
+dataset$P3302[dataset$P3302 == 98] <- NA
+dataset$P3302[dataset$P3302 == 99] <- NA
+dataset$P3302[dataset$P3303 == 98] <- NA
+dataset$P3302[dataset$P3303 == 99] <- NA
+
+
+dataset %>%
+  select(P3301, P3302) %>%
+  mutate(distpppsoe = P3302 - P3301)
+```
+
+También se puede añadir a lo anterior el cálculo de una segunda y una tercera variable, como la distancia percibida entre PSOE y Ciudadanos y entre PP y Ciudadanos. Con estas variables se puede operar dentro de la misma secuencia de código que las crea, sin necesidad de empezar una nueva.
+
+```{r varios mutate}
+dataset %>%
+  select(P3301, P3302, P3303) %>%
+  mutate(distpppsoe = P3302 - P3301, distpsoecs = P3301 - P3303, distppcs = P3302 - P3303)
+```
+
+Estas nuevas variables creadas también pueden operar con estadísticos como la media. Para calcular la media es importante excluir los valores NA, ya que en caso de no hacerlo mediante el comando **na.rm**, la media no podrá ser calculada. Si en un cálculo hay un NA, el resultado será NA independientemente de la media de los demás valores. En el siguiente fragmento de código calculamos la distancia entre la ubicación ideológica del PSOE percibida por el entrevistado y la autoubicación media del PSOE percibida por la muestra.
+
+```{r mutate con calculos}
+dataset %>%
+  select(P3301) %>%
+  mutate(distpsoemedia = P3301 - mean(P3301, na.rm = TRUE))
+```
+
+*Mutate* añade las variables calculadas al conjunto de datos existente conservando todas las variables. Sin embargo, existe una variación de este comando, llamada **transmute**, que crea un conjunto de datos que solo contiene las variables de nueva creación.
+
+```{r transmute}
+dataset %>%
+  transmute(distpppsoe = P3302 - P3301, distpsoecs = P3301 - P3303, distppcs = P3302 - P3303)
+```
+
+# Summarise
+
+El último comando de **dplyr** que vamos a ver es **summarise**, que resume variables del dataframe en un solo estadístico. Permite, por ejemplo, calcular la media de autoubicación ideológica de los encuestados.
+
+```{r summarise}
+dataset %>%
+  summarise(mean(P32))
+```
+
+Sin embargo, el dato que hemos obtenido con el código anterior está falseado por los 98 y 99 correspondientes al no sabe y al no contesta. Para paliar este defecto hay que recodificarlos con **na_if** de *mutate*. Este comando es especialmente útil cuando tratamos con datos de encuesta, donde es frecuente tener que lidiar con valores perdidos. Con el siguiente código enviamos a perdidos (NA, de *not available*) los 98 y 99 y repetimos el cálculo anterior para obtener la media real de la muestra excluyendo los perdidos
+
+```{r summarise sin NA}
+dataset %>%
+  select(P32) %>%
+  mutate(P32 = na_if(P32, 98)) %>%
+  mutate(P32 = na_if(P32, 99)) %>%
+  summarise(mediaubicacion = mean(P32, na.rm = TRUE))
+```
+
+Por último, con **group_by** podemos crear categorías en función de una variable, por ejemplo la religión, y tener en cuenta esos grupos para calcular estadísticos, como por ejemplo la autoubicación ideológica media de cada grupo religioso. Previamente hemos definido las etiquetas de cada código con **levels**. Este comando permite segmentar la muestra y acceder a estadísticos desagregados. 
+
+```{r summarise con group_by}
+dataset$P48 <- as_factor(dataset$P48)
+levels(dataset$P48) <- c("Católico practicante", "Católico no practicante", "Creyente de otra religión", "Agnóstico", "Indiferente, no creyente", "Ateo", "N.C.")
+  
+dataset %>%
+  select(P32, P48) %>%
+  mutate(P32 = na_if(P32, 98)) %>%
+  mutate(P32 = na_if(P32, 99)) %>%
+  mutate(P48 = na_if(P48, 9)) %>%
+  group_by(P48) %>%
+  dplyr::summarise(mediaubicacion = mean(P32, na.rm = TRUE))
+```
+
+Para cerrar esta serie de posts en los que estamos comenzando a programar en R con datos del CIS vamos a hablar de las funciones y de las dos aportaciones más comunes de la comunidad: los paquetes y el código abierto.
+
+Las **funciones** permiten condensar un procedimiento en una sola función. Es la lógica que siguen los comandos que hemos ido viendo durante toda la serie. Si queremos crear una función que cruce dos variables llamadas x e y, usaremos el comando **function**.
+
+```{r crear funcion}
+tablacruzada <- function(x,y){table(x, y)}
+```
+
+La función llamada *tablacruzada* cogerá los valores de x e y y devolverá una tabla cruzada de esas dos variables. Antes de aplicarla hay que dar un valor a x y otro a y. En este caso x será la interés en la política e y el interés en la campaña electoral.
+
+```{r definir valores funcion}
+x <- dataset$P1
+y <- dataset$P2
+```
+
+Por último aplicamos la función, que nos devuelve la tabla cruzada de P1 y P2. La programación de este tipo de funciones es especialmente útil cuando necesitamos repetir varias veces un mismo procedimiento y queremos tener un código limpio y legible.
+
+```{r aplicar funcion}
+tablacruzada(x,y)
+```
+
+Los **paquetes** son conjuntos de funciones que facilitan la programación en R. Son una especie de complemento que amplía las funcionalidades del R básico. Al tener una comunidad tan amplia, este lenguaje de programación cuenta con paquetes muy diversos que podemos encontrar en su repositorio oficial llamado [**CRAN**](https://cran.r-project.org/) o en los Github de los propios desarrolladores (aunque hay que tener precaución y saber qué estamos instalando para prevenir problemas). Dos paquetes no oficiales interesantes para científicos sociales son [**CisUtils**](https://github.com/griverorz/cisutils), de Gonzalo Rivero para tratar datos del CIS, y [**Elecciones**](https://r-elecciones.netlify.com/), de Héctor Meleiro para descargar resultados electorales.
+
+La instalación de paquetes, como ya hemos ido viendo durante la serie, se hace mediante el comando **install.packages** si está en el CRAN y **devtools::install_github** si está alojado en Github. Para instalar Elecciones haremos lo siguiente:
+
+```{r, warning=FALSE,message=FALSE}
+devtools::install_github("hmeleiro/elecciones")
+```
+
+La activación de paquetes ya instalados se hace con **library**.
+
+```{r elecciones}
+library(elecciones)
+```
+
+Una vez instalada y activada la librería, no hay más que ir a su página web y buscar la documentación, en la que aparecerá una descripción de las funcionalidades que añade y ejemplos de su uso. Con Elecciones, por ejemplo, podemos descargar los resultados de las elecciones generales de 1979 a nivel de municipio [como se comenta en su documentación](https://r-elecciones.netlify.com/).
+
+```{r elecciones 1979}
+generales.1979 <- municipios(tipoeleccion = "generales", 
+                             yr = 1979, mes = "03")
+```
+
+Otros usuarios de R comparten directamente el **código** de su análisis para que pueda ser leído y replicado por las personas interesadas. Habitualmente este código se acompaña de comentarios que documentan el proceso y facilitan su interpretación. Ejemplos de esto son el [código compartido por Ariane Aumaitre donde enseña a animar gráficos de ggplot2](https://arianeaumaitre.com/2019/05/13/graficos-animados-con-ggplot-y-algunas-cosas-mas/) o [el de Daiana Emili donde analiza el guion de La Casa de Papel](http://rpubs.com/daianaemili/519026).
