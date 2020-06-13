@@ -1,4 +1,4 @@
-**Introducción a R con datos del CIS**
+# **Introducción a R con datos del CIS**
 
 Este es un proyecto didáctico para acercar el lenguaje de programación R a estudiantes y profesionales de las ciencias sociales. En la mayoría de cursos de introducción que hice para aprender R, los ejemplos se hacían con datasets de flores, coches o precios de productos, así que pensé en hacer una introducción con datos de encuestas con las que estamos más habituados a trabajar. Además son datos que motivan a la persona que está aprendiendo al permitirle ver una mayor aplicación a su campo.
 
