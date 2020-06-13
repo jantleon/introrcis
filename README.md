@@ -6,12 +6,12 @@ Se recomienda tener una base mínima de análisis de datos, programación y leng
 
 Esta serie introductoria se publicó en varios artículos en la página web Polikracia.
 
-[Introducción a R con datos del CIS (I): ¿Qué es R y para qué sirve?](https://polikracia.com/introduccion-a-r-con-datos-del-cis-i/)
+* [Introducción a R con datos del CIS (I): ¿Qué es R y para qué sirve?](https://polikracia.com/introduccion-a-r-con-datos-del-cis-i/)
 
-[Introducción a R con datos del CIS (II): Visualización con ggplot2](https://polikracia.com/introduccion-r-datos-cis-ggplot2/)
+* [Introducción a R con datos del CIS (II): Visualización con ggplot2](https://polikracia.com/introduccion-r-datos-cis-ggplot2/)
 
-[Introducción a R con datos del CIS (III): Análisis exploratorio de datos](https://polikracia.com/introduccion-r-datos-cis-iii-analisis-exploratorio/)
+* [Introducción a R con datos del CIS (III): Análisis exploratorio de datos](https://polikracia.com/introduccion-r-datos-cis-iii-analisis-exploratorio/)
 
-[Introducción a R con datos del CIS (IV): Manipulación de conjuntos de datos con dplyr](https://polikracia.com/introduccion-a-r-con-datos-del-cis-iv-manipulacion-de-conjuntos-de-datos-con-dplyr/)
+* [Introducción a R con datos del CIS (IV): Manipulación de conjuntos de datos con dplyr](https://polikracia.com/introduccion-a-r-con-datos-del-cis-iv-manipulacion-de-conjuntos-de-datos-con-dplyr/)
 
-[Introducción a R con datos del CIS (V): Funciones, paquetes y código de la comunidad](https://polikracia.com/introduccion-r-con-datos-cis-v-funciones-paquetes-y-codigo/)
+* [Introducción a R con datos del CIS (V): Funciones, paquetes y código de la comunidad](https://polikracia.com/introduccion-r-con-datos-cis-v-funciones-paquetes-y-codigo/)
